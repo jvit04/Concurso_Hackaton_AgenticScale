@@ -1,0 +1,11 @@
+# Entornos virtuales
+venv/
+env/
+.env
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Base de datos simulada (Opcional: si no quieren pisarse los registros de prueba)
+# crm_database.json
