@@ -7,9 +7,9 @@ Evento: Agentic Scale Ecuador Tech Week 2026 | Periodo: 2026-1 | Estado: Complet
 - José Andrés Viteri Hoyos ([jvit04](https://github.com/jvit04))
 
 ## Capturas / Demo
-![Panel de Control Comercial](docs\screenshots\hu3Dashboard.png)
-![Pendientes](docs\screenshots\hu3Historial.png)
-![Historial](docs\screenshots\hu3Pendientes.png)
+![Panel de Control Comercial](docs/screenshots/hu3Dashboard.png)
+![Pendientes](docs/screenshots/hu3Historial.png)
+![Historial](docs/screenshots/hu3Pendientes.png)
 
 *(Link de despliegue en producción: [Insertar enlace de Streamlit Community Cloud aquí])*
 
