@@ -1,0 +1,21 @@
+{
+    "leads": [
+        {
+            "id": "lead_prueba_01",
+            "nombre": "Carlos Mendoza",
+            "email": "carlos.m@example.com",
+            "tipo_cliente": "B2C",
+            "interes": "Fondos de inversión indexados",
+            "presupuesto": 5000.0,
+            "perfil": "Inversionista principiante, joven profesional",
+            "urgencia": "Alta",
+            "prioridad": "Alta",
+            "resumen_conversacion_comercial": "El usuario busca opciones para hacer crecer sus ahorros a mediano plazo. Muestra temor al riesgo pero le interesa superar la inflación.",
+            "tema_aprendizaje": "Introducción a la Bolsa de Valores",
+            "score_quiz": 3,
+            "consentimiento_registro": true,
+            "accion_propuesta": "Agendar reunión de asesoría personalizada de 15 minutos.",
+            "estado_accion": "Pendiente"
+        }
+    ]
+}
