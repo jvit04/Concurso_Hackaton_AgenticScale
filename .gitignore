@@ -9,3 +9,4 @@ __pycache__/
 
 # Base de datos simulada (Opcional: si no quieren pisarse los registros de prueba)
 # crm_database.json
+.streamlit/
