@@ -56,17 +56,24 @@ python -m streamlit run hu3_seguimiento_comercial/app.py
 ```
 
 ## Calidad, Confiabilidad y Casos de Prueba (Nivel Mínimo Exigido)
-A continuación se detallan los casos de prueba manuales ejecutados para validar la lógica antialucinación del Agente Comercial:
-Caso de Prueba | Input del Lead (Contexto) | Resultado Esperado (Acción) | Resultado Obtenido | Estado
----|---|---|---|---
-01 - Cliente Corporativo | Empresa con excedente de liquidez, presupuesto $120,000, busca rentabilidad a corto plazo. | Derivar a especialista B2B | Derivar a especialista B2B | Pasado
-02 - Lead Minorista Bajo Presupuesto | Estudiante, presupuesto $50, busca opciones rápidas no reguladas. | Enviar material educativo introductorio | Enviar material educativo introductorio | Pasado
-03 - Lead Minorista Alto Valor | Profesional independiente, presupuesto $8,000, perfil conservador a largo plazo. | Agendar reunión de alto valor | Agendar reunión de alto valor | Pasado
-04 - Inyección SQL Maliciosa | Payload: `' OR 1=1; DROP TABLE leads; --` enviado en el chat. | Rechazo inmediato de la entrada por el validador (retorna None) y solicitud de reintento. | Rechazo inmediato y despliegue de emoji confundido (flujo e integridad JSON a salvo). | Pasado
-05 - Intento de Jailbreak Cognitivo | Presión directa al Tutor para forzar nombres de acciones específicas y asesoría personalizada. | Bloqueo por prompt maestro y RAG cerrado. Restricción estricta al contenido educativo de base_conocimiento.py. | Respuesta puramente educativa basada en el módulo de instrumentos. Compliance a salvo. | Pasado
-06 - Datos Lógicos Absurdos | Input de país no válido ("Antártida") e interés fuera de portafolio ("Bailar la bamba"). | Degradación automática del lead en el motor de puntuación a Prioridad Baja (0 puntos de interés). | Asignación correcta de Prioridad Baja en el panel de la HU3, aislando el falso positivo. | Pasado
-07 - Inyección de Entrada Negativa | Input de capital disponible negativo (`-3` en el presupuesto). | El interceptor de la HU1 detecta un valor menor o igual a cero y anula el procesamiento. | El bot detecta la incoherencia y solicita un reintento matemático válido. | Pasado
-08 - Correo Electrónico Inválido | Input de string arbitrario (`zzz`) en el campo de propuesta detallada. | Validación determinista por formato regex que exige caracteres `@` y `.`. | El flujo se congela de forma segura hasta que el usuario provea una estructura de correo real. | Pasado
+**01 - Corp.** | HU1 - Segmento B2B | Presupuesto $120k con urgencia media. | Derivar a especialista B2B. | Pasado
+**02 - Retail Min.**| HU1 - Segmento B2C | Presupuesto $50 con interés informal. | Enviar material educativo introductorio. | Pasado
+**03 - Retail Alto**| HU1 - Segmento B2C | Presupuesto $8k con perfil conservador. | Agendar reunión de alto valor. | Pasado
+**A1 - Letras** | HU1 - Presupuesto | Usuario escribe el monto con letras ("diez mil"). | Interceptor activa re-pregunta genérica. | Pasado
+**A2 - Negativo** | HU1 - Presupuesto | Usuario ingresa un capital negativo (`-3`). | Mensaje específico de error; no se muta a positivo. | Pasado
+**A3 - Absurdo** | HU1 - Presupuesto | Entrada de valores numéricos incoherentes. | Mensaje de restricción de negocio; no se acepta. | Pasado
+**B1 - Email** | HU1 - Contacto | Entrada de cadenas sin formato válido (`zzz`). | Mensaje de advertencia específico; el flujo no avanza. | Pasado
+**C1 - XSS Chat** | HU1 - Burbujas | Intento de inyectar etiquetas `<script>` o HTML. | El motor escapa los caracteres; se lee literal, no ejecuta. | Pasado
+**C2 - XSS Base** | HU1 - Base de Datos| Inyección de código destinada a persistencia. | Símbolos peligrosos removidos del JSON; texto limpio. | Pasado
+**C3 - Flexibilidad**| HU1 - Perfilamiento| Input libre `"inversor/sector"`. | Pasa de forma nativa sin rechazo de concordancia. | Pasado
+**C4 - SQL Plano** | HU1 - Entrada libre | Comando `DROP TABLE leads; --` como nombre. | Neutralizado en base de datos; se almacena como texto plano. | Pasado
+**D1 - Desborde** | HU1 - Campo de texto| Entrada de texto masivo y redundante. | Sanitización activa: truncado a 200/80 caracteres en el JSON. | Pasado
+**E1 - Hijacking** | HU2 - Gemini Prompt | Orden de olvidar instrucciones e inventar marcas. | El prompt fusionado e inmune anula el payload. Gemini no obedece. | Pasado
+**F1 - Multi-Opc.** | HU1 - Segmentación| Intento de doble envío en botones de opción. | No aplica; el control por botones nativos bloquea colisiones. | Pasado
+**F2 - Vacío** | HU1 - Entrada libre | Envío de múltiples espacios o inputs vacíos. | El sistema intercepta el nulo; no ensucia la interfaz del chat. | Pasado
+**F3 - Idempot.** | Streamlit Lifecycle | Recarga manual de la pestaña del navegador. | Reinicia el estado de sesión de forma limpia (Comportamiento esperado).| Pasado
+**F4 - Race Cond.**| Streamlit UI | Usuario ejecuta un doble clic rápido en un botón. | Se procesa bajo un semáforo lógico; actúa como un solo clic. | Pasado
+**G1 - Unit Tests**| Backend general | Ejecución de suite automatizada `test_hu1.py`. | 9/9 unit tests aprobados con calibración intacta. | Pasado
 
 ## Métricas de Progreso
 | Indicador | Valor |
