@@ -427,7 +427,7 @@ def calcular_prioridad(tipo_cliente: str, presupuesto: float, urgencia: str,
 import os
 
 # Modelo económico y rápido, suficiente para redactar un párrafo corto.
-_GEMINI_MODEL = "gemini-1.5-flash"
+_GEMINI_MODEL = "gemini-2.0-flash"
 
 
 def _construir_plantilla_resumen(datos: dict) -> str:

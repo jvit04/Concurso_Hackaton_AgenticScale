@@ -14,8 +14,14 @@ if sys.platform == 'win32':
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.database import obtener_todos_los_leads, actualizar_lead
 from hu3_seguimiento_comercial.agent_dashboard import generar_sugerencia_comercial
+from shared.ui_styles import aplicar_estilos_globales
 
 st.set_page_config(page_title="CRM Ejecutivo", layout="centered")
+
+# Inyectar el diseño unificado
+aplicar_estilos_globales()
+
+st.markdown('<div class="topbar-marca">Atlas Financial AI</div>', unsafe_allow_html=True)
 
 st.title("💼 Panel de Control Comercial")
 st.markdown("Gestión de Leads y Acciones Sugeridas por IA")
@@ -95,13 +101,13 @@ else:
                 
                 col_btn_1, col_btn_2 = st.columns(2)
                 with col_btn_1:
-                    if st.button("👍 Aprobar / Guardar", key=f"app_{lead.id}", use_container_width=True):
+                    if st.button("Aprobar", key=f"app_{lead.id}", use_container_width=True):
                         lead.accion_propuesta = accion_editable
                         lead.estado_accion = "Aprobado"
                         actualizar_lead(lead)
                         st.rerun()
                 with col_btn_2:
-                    if st.button("❌ Rechazar", key=f"rej_{lead.id}", use_container_width=True):
+                    if st.button("Rechazar", key=f"rej_{lead.id}", use_container_width=True):
                         lead.estado_accion = "Rechazado"
                         actualizar_lead(lead)
                         st.rerun()

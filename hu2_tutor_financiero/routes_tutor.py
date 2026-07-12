@@ -25,7 +25,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 try:
-    from agente_ia_hu2.agent_tutor import (
+    from hu2_tutor_financiero.agent_tutor import (
         evaluar_quiz,
         iniciar_quiz,
         obtener_o_crear_sesion,
@@ -99,7 +99,7 @@ def responder_quiz_endpoint(payload: RespuestasQuizEntrada):
 @router.get("/temas")
 def listar_temas():
     """Lista los temas aprobados por Futuro Academy disponibles en el Tutor."""
-    from agente_ia_hu2.base_conocimiento import BASE_CONOCIMIENTO
+    from hu2_tutor_financiero.base_conocimiento import BASE_CONOCIMIENTO
 
     return [
         {"id": tema_id, "nombre_visible": tema["nombre_visible"], "fuente": tema["fuente"]}

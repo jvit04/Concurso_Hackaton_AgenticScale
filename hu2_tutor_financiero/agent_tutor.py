@@ -25,7 +25,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 try:
-    from agente_ia_hu2.base_conocimiento import (
+    from hu2_tutor_financiero.base_conocimiento import (
         BASE_CONOCIMIENTO,
         detectar_tema_por_palabras_clave,
         listar_temas_disponibles,
@@ -53,32 +53,27 @@ def _cargar_variables_entorno() -> None:
                 continue
             clave, valor = linea.split("=", 1)
             clave = clave.strip()
-            valor = valor.strip().strip('"').strip("'")
-            os.environ.setdefault(clave, valor)
+            value = valor.strip().strip('"').strip("'")
+            os.environ.setdefault(clave, value)
 
 
 _cargar_variables_entorno()
 
 # --------------------------------------------------------------------------
-# Integración con Gemini (Google Generative AI)
+# Integración Oficial con Gemini (Google GenAI SDK) - ACTUALIZADO
 # --------------------------------------------------------------------------
-# Se usa ÚNICAMENTE para redactar de forma conversacional el contenido ya
-# aprobado en base_conocimiento.py. El modelo recibe instrucciones explícitas
-# de no inventar datos financieros fuera de ese contenido.
-
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
 
-_modelo_gemini = None  # se inicializa de forma perezosa (lazy) al primer uso
+_cliente_gemini = None  # Inicialización lazy del nuevo SDK
 
 
-def _obtener_modelo_gemini():
+def _obtener_cliente_gemini():
     """
-    Inicializa el cliente de Gemini la primera vez que se necesita.
-    Lanza un error claro si falta la API key, en lugar de fallar silenciosamente.
+    Inicializa el cliente oficial de google-genai la primera vez que se necesita.
     """
-    global _modelo_gemini
-    if _modelo_gemini is not None:
-        return _modelo_gemini
+    global _cliente_gemini
+    if _cliente_gemini is not None:
+        return _cliente_gemini
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -87,20 +82,20 @@ def _obtener_modelo_gemini():
             "usar el Tutor IA. Ejecuta: export GEMINI_API_KEY='tu_api_key'"
         )
 
-    import google.generativeai as genai
+    from google import genai
 
-    genai.configure(api_key=api_key)
-    _modelo_gemini = genai.GenerativeModel(GEMINI_MODEL_NAME)
-    return _modelo_gemini
+    # Instanciación nativa bajo el nuevo estándar global de ATLAS
+    _cliente_gemini = genai.Client(api_key=api_key)
+    return _cliente_gemini
 
 
 def _redactar_explicacion_con_gemini(tema: dict, pregunta_usuario: str) -> str:
     """
     Pide a Gemini que redacte, en tono de tutor cercano, el contenido YA
-    aprobado del tema. Si la llamada falla por cualquier motivo (sin API key,
-    error de red, cuota, etc.), se usa el resumen aprobado tal cual como
-    respaldo, para que la demo nunca se quede sin respuesta.
+    aprobado del tema usando la estructura moderna del SDK.
     """
+    from google.genai import types
+
     system_instruction = (
         "Eres el Tutor IA de Futuro Academy. SOLO puedes explicar el contenido "
         "aprobado que se te entrega a continuación. No inventes cifras, leyes, "
@@ -119,16 +114,23 @@ def _redactar_explicacion_con_gemini(tema: dict, pregunta_usuario: str) -> str:
     )
 
     try:
-        modelo = _obtener_modelo_gemini()
-        respuesta = modelo.generate_content(
-            [system_instruction, prompt],
-            generation_config={"temperature": 0.4, "max_output_tokens": 300},
+        cliente = _obtener_cliente_gemini()
+        
+        # Migración de generate_content al nuevo formato estructurado de objetos
+        respuesta = cliente.models.generate_content(
+            model=GEMINI_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.4,
+                max_output_tokens=300
+            )
         )
         texto = (respuesta.text or "").strip()
         return texto if texto else tema["resumen"]
     except Exception:
         # Respaldo: si Gemini no está disponible, igual cumplimos el criterio
-        # de responder con contenido aprobado (solo que sin redacción del LLM).
+        # de responder con contenido aprobado.
         return tema["resumen"]
 
 
@@ -166,21 +168,10 @@ def obtener_o_crear_sesion(session_id: Optional[str] = None, email: Optional[str
 
 
 def procesar_mensaje(sesion: SesionTutor, mensaje: str) -> dict:
-    """
-    Punto de entrada principal del chat educativo.
-
-    Devuelve un dict con:
-      - respuesta: texto para mostrar al usuario
-      - fuente: fuente citada (o None si no aplica a este turno)
-      - tema: id del tema detectado (o None)
-      - accion_sugerida: "elegir_tema" | "explicacion" | "pedir_consentimiento"
-      - opciones_tema: lista de temas disponibles, solo si no se detectó ninguno
-    """
-    # 1) Si estamos esperando un sí/no de consentimiento, priorizamos ese flujo.
+    """Punto de entrada principal del chat educativo."""
     if sesion.esperando_consentimiento:
         return _procesar_respuesta_consentimiento(sesion, mensaje)
 
-    # 2) Detectar el tema de interés dentro del mensaje del usuario.
     tema_id = detectar_tema_por_palabras_clave(mensaje)
 
     if not tema_id:
@@ -211,7 +202,7 @@ def procesar_mensaje(sesion: SesionTutor, mensaje: str) -> dict:
         "2) Un quiz corto de 3 preguntas para evaluar lo aprendido.\n"
         "¿Cuál prefieres? (responde 'ruta' o 'quiz')\n\n"
         "Además, ¿me das tu consentimiento para registrar tu interés en "
-        f"'{tema['nombre_visible']}' en el CRM de Futuro Academy, para que un "
+        f"'{tema['nombre_visible']}' en el CRM de ATLAS Financial AI, para que un "
         "asesor pueda darte seguimiento? (sí/no)"
     )
 
@@ -240,7 +231,7 @@ def _procesar_respuesta_consentimiento(sesion: SesionTutor, mensaje: str) -> dic
         return {
             "respuesta": (
                 "¡Gracias! Registré tu interés en el CRM para que un asesor de "
-                "Futuro Academy pueda contactarte si lo deseas. Cuando quieras, "
+                "ATLAS Financial AI pueda contactarte si lo deseas. Cuando quieras, "
                 "puedes pedirme el quiz de 3 preguntas escribiendo 'quiz'."
             ),
             "fuente": None,
@@ -328,9 +319,6 @@ def evaluar_quiz(sesion: SesionTutor, respuestas: List[int]) -> dict:
 # --------------------------------------------------------------------------
 # Integración con el CRM compartido (shared/database.py y shared/schemas.py)
 # --------------------------------------------------------------------------
-# NOTA: se importa de forma perezosa (dentro de las funciones) para que este
-# módulo pueda importarse y probarse aunque el equipo aún no tenga /shared
-# listo, y para dar un mensaje de error claro si falta.
 
 
 def _buscar_lead(sesion: SesionTutor):
@@ -345,20 +333,12 @@ def _buscar_lead(sesion: SesionTutor):
 
 def _actualizar_lead(lead) -> None:
     from shared.database import actualizar_lead
-
     actualizar_lead(lead)
 
 
 def registrar_interes_en_crm(sesion: SesionTutor) -> bool:
     """
-    Cumple el criterio: "Registra el tema de interés del usuario, con su
-    consentimiento, como señal comercial en el CRM."
-
-    - Si el usuario ya existe como Lead (porque pasó por HU1), actualiza sus
-      campos tema_aprendizaje y consentimiento_registro.
-    - Si no existe (el Tutor puede ser su primer contacto con Futuro Academy),
-      crea un Lead mínimo para no perder la señal comercial.
-    Devuelve True si el CRM quedó actualizado correctamente.
+    Registra el tema de interés del usuario, con su consentimiento, como señal comercial.
     """
     if not sesion.email or not sesion.tema_actual:
         return False
@@ -369,7 +349,6 @@ def registrar_interes_en_crm(sesion: SesionTutor) -> bool:
         from shared.database import crear_lead
         from shared.schemas import LeadCRM
     except ImportError:
-        # /shared aún no está disponible en este entorno; no se puede persistir.
         return False
 
     lead = _buscar_lead(sesion)

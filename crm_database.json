@@ -118,7 +118,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Agendar reunión de alto valor",
             "estado_accion": "Pendiente"
         },
         {
@@ -137,7 +137,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Agendar reunión de alto valor",
             "estado_accion": "Pendiente"
         },
         {
@@ -156,7 +156,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Enviar material educativo introductorio",
             "estado_accion": "Pendiente"
         },
         {
@@ -175,7 +175,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Derivar a especialista B2B",
             "estado_accion": "Pendiente"
         },
         {
@@ -194,7 +194,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Agendar reunión de alto valor",
             "estado_accion": "Pendiente"
         },
         {
@@ -213,7 +213,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Derivar a especialista B2B",
             "estado_accion": "Pendiente"
         },
         {
@@ -232,7 +232,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Agendar reunión de alto valor",
             "estado_accion": "Pendiente"
         },
         {
@@ -251,7 +251,7 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Agendar reunión de alto valor",
             "estado_accion": "Pendiente"
         },
         {
@@ -270,7 +270,45 @@
             "tema_aprendizaje": null,
             "score_quiz": null,
             "consentimiento_registro": false,
-            "accion_propuesta": null,
+            "accion_propuesta": "Agendar reunión de alto valor",
+            "estado_accion": "Pendiente"
+        },
+        {
+            "id": "lead_017",
+            "nombre": "BionicsF4",
+            "email": "jviteri2004@gmail.com",
+            "tipo_cliente": "B2B",
+            "interes": "Inversión de excedentes",
+            "presupuesto": 100000.0,
+            "perfil": "Gerente General. Empresa de Más de 200 colaboradores.",
+            "urgencia": "Media",
+            "prioridad": "Alta",
+            "resumen_conversacion_comercial": "BionicsF4 es un lead corporativo (B2B) interesado en: Inversión de excedentes. Cuenta con presupuesto aproximado de USD 100,000 y urgencia media. Perfil: Gerente General. Empresa de Más de 200 colaboradores. País: Ecuador.",
+            "empresa_tamano": "Más de 200",
+            "tolerancia_riesgo": null,
+            "tema_aprendizaje": null,
+            "score_quiz": null,
+            "consentimiento_registro": false,
+            "accion_propuesta": "Derivar a especialista B2B",
+            "estado_accion": "Pendiente"
+        },
+        {
+            "id": "lead_018",
+            "nombre": "Juan",
+            "email": "juan@mail.com",
+            "tipo_cliente": "B2C",
+            "interes": "Crear un fondo de emergencia",
+            "presupuesto": 5000.0,
+            "perfil": "Perfil de riesgo conservador.",
+            "urgencia": "Media",
+            "prioridad": "Media",
+            "resumen_conversacion_comercial": "Juan es un lead individual (B2C) interesado en: Crear un fondo de emergencia. Cuenta con presupuesto aproximado de USD 5,000 y urgencia media. Perfil: Perfil de riesgo conservador. País: Colombia.",
+            "empresa_tamano": null,
+            "tolerancia_riesgo": "Conservador",
+            "tema_aprendizaje": null,
+            "score_quiz": null,
+            "consentimiento_registro": false,
+            "accion_propuesta": "Agendar reunión de alto valor",
             "estado_accion": "Pendiente"
         }
     ]
