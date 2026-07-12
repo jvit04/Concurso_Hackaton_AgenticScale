@@ -33,7 +33,7 @@ from typing import Optional
 PREGUNTAS_COMUNES_APERTURA = [
     {
         "id": "nombre",
-        "texto": "Hola, soy tu asistente virtual. Para empezar, ¿con quién tengo el gusto de hablar?",
+        "texto": "Hola, soy tu asistente virtual 👋 Para empezar, ¿cuál es tu nombre?",
         "tipo": "texto",
         "destino": "nombre",
         "fusion": False,
@@ -263,19 +263,19 @@ def parsear_numero(respuesta_usuario: str) -> Optional[float]:
     return valor
 
 
-def interpretar_respuesta(pregunta: dict, respuesta_usuario: str):
-    """
-    Devuelve el valor ya tipado/mapeado según el 'tipo' de la pregunta:
-      - "opcion" -> valor del schema (str) o None
-      - "numero" -> float o None
-      - "texto"  -> string tal cual (limpiado)
-    """
+SALUDOS_COMUNES = {"hola", "buenas", "hey", "hi", "holi", "que tal", "qué tal", "buenos dias", "buenos días", "buenas tardes", "buenas noches"}
+
+def interpretar_respuesta(pregunta, respuesta_usuario):
     tipo = pregunta.get("tipo", "texto")
     if tipo == "opcion":
         return parsear_opcion(pregunta, respuesta_usuario)
     if tipo == "numero":
         return parsear_numero(respuesta_usuario)
-    return (respuesta_usuario or "").strip()
+    texto = (respuesta_usuario or "").strip()
+    # Si es la pregunta del nombre y el usuario solo saludó, no lo tomamos como nombre
+    if pregunta.get("destino") == "nombre" and normalizar(texto) in SALUDOS_COMUNES:
+        return None
+    return texto
 
 
 # =====================================================================
@@ -356,6 +356,12 @@ INTERESES_FORMALES = [
     "linea de credito", "jubilación", "jubilacion", "retiro", "pensión", "pension",
     "capital de trabajo", "excedente", "excedentes", "plan", "diversificación",
     "diversificacion", "indexado", "corporativa", "liquidez",
+    # Vivienda / hipoteca
+    "casa", "vivienda", "hipoteca", "hipotecario", "inmueble", "inmobiliario",
+    "propiedad", "departamento", "terreno",
+    # Otros productos formales frecuentes
+    "seguro", "seguros", "leasing", "auto", "vehículo", "vehiculo",
+    "educación", "educacion", "negocio", "expansión", "expansion",
 ]
 INTERESES_NO_OFRECIDOS = [
     "cripto", "criptomoneda", "criptomonedas", "bitcoin", "forex", "no regulado",
