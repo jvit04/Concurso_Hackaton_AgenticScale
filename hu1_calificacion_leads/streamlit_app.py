@@ -168,6 +168,21 @@ def _procesar(texto_usuario):
 
     valor = interpretar_respuesta(pregunta, texto_usuario)
 
+    from hu1_calificacion_leads.agent_commercial import (
+        RECHAZO_MONTO_ALTO, RECHAZO_MONTO_NEGATIVO, RECHAZO_EMAIL_INVALIDO,
+    )
+    mensajes_especificos = {
+        RECHAZO_MONTO_ALTO: "Ese monto parece muy alto. ¿Podrías confirmarlo o "
+                            "ingresar una cifra más ajustada?",
+        RECHAZO_MONTO_NEGATIVO: "El monto debe ser un número positivo. ¿Podrías "
+                                "ingresarlo de nuevo?",
+        RECHAZO_EMAIL_INVALIDO: "Ese correo no parece válido. ¿Podrías escribirlo "
+                                "de nuevo? (ejemplo: nombre@correo.com)",
+    }
+    if valor in mensajes_especificos:
+        _agregar("assistant", mensajes_especificos[valor])
+        return
+
     # Política de re-preguntar ante None (una vez)
     if valor is None:
         if st.session_state.reintentos == 0:
@@ -176,7 +191,6 @@ def _procesar(texto_usuario):
                      "🤔 No logré entender tu respuesta. ¿Podrías intentarlo de nuevo?")
             return
         else:
-            # segundo fallo: se omite el dato y se avanza
             st.session_state.reintentos = 0
             st.session_state.respuestas.append((pregunta, None))
     else:
@@ -330,10 +344,7 @@ for i, turno in enumerate(st.session_state.historial):
 # --------------------------------------------------------------------------
 if st.session_state.estado == FINALIZADO and st.session_state.lead:
     lead = st.session_state.lead
-    primer_nombre = (lead.nombre or "").split(" ")[0] if lead.nombre else ""
-    # Limpiar caracteres de Markdown para que un nombre "raro" no rompa el formato
-    primer_nombre = "".join(c for c in primer_nombre if c not in "*_`#[]()<>")
-    saludo = f"¡Gracias por tu tiempo, {primer_nombre}! 🙌" if primer_nombre else "¡Gracias por tu tiempo! 🙌"
+    saludo = "¡Gracias por tu tiempo! 🙌"
 
     st.success(
         f"{saludo}\n\n"
