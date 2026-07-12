@@ -4,7 +4,7 @@ Evento: Agentic Scale Ecuador Tech Week 2026 | Periodo: 2026-1 | Estado: Complet
 ## Equipo de trabajo
 - Diego Moscol ([Fergaku](https://github.com/Fergaku/Fergaku))
 - Eddy Lima ([elima-hub](https://github.com/elima-hub))
-- José Andrés Viteri Hoyos ([jvit04](https://github.com/jvit04))
+- José Viteri ([jvit04](https://github.com/jvit04))
 
 ## Capturas / Demo
 ![hu1_1](docs/screenshots/hu1_1.png)
