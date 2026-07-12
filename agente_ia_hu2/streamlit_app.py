@@ -58,58 +58,6 @@ except ModuleNotFoundError:  # Compatibilidad con ejecuciones directas desde la 
 
 st.set_page_config(page_title="Tutor IA · Futuro Academy", page_icon="🎓", layout="centered")
 
-st.markdown(
-    """
-    <style>
-    :root {
-        --background-color: #f7f9fc;
-        --card-color: #ffffff;
-        --primary-color: #2563eb;
-        --primary-color-dark: #1d4ed8;
-        --text-color: #0f172a;
-        --muted-color: #475569;
-        --border-color: #dbe4f0;
-    }
-    .stApp {
-        background-color: var(--background-color);
-        color: var(--text-color);
-    }
-    .stSidebar {
-        background-color: #f1f5f9;
-        border-right: 1px solid var(--border-color);
-    }
-    .stButton > button {
-        background-color: var(--primary-color);
-        color: white;
-        border-radius: 8px;
-        border: 1px solid var(--primary-color-dark);
-    }
-    .stButton > button:hover {
-        background-color: var(--primary-color-dark);
-        color: white;
-    }
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px;
-    }
-    .stTextInput > div > div > input::placeholder,
-    .stTextArea > div > div > textarea::placeholder {
-        color: #64748b !important;
-    }
-    .stAlert, .stInfo, .stSuccess, .stWarning, .stError {
-        border-radius: 10px;
-    }
-    .stApp, .stApp p, .stApp div, .stApp span, .stApp label {
-        color: #000000 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 # --------------------------------------------------------------------------
 # Estado de la sesión de Streamlit
