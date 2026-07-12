@@ -330,7 +330,8 @@ def ensamblar_datos(respuestas: list) -> dict:
     if fusion_perfil:
         perfil_previo = datos.get("perfil", "")
         partes = ([perfil_previo] if perfil_previo else []) + fusion_perfil
-        datos["perfil"] = " — ".join(partes)
+        partes = [p.strip().rstrip(".") for p in partes if p.strip()]
+        datos["perfil"] = ". ".join(partes) + "." if partes else ""
 
     if contexto_resumen:
         datos["_contexto_resumen"] = contexto_resumen
@@ -345,37 +346,272 @@ def _etiqueta(pregunta: dict) -> str:
     }
     return etiquetas.get(pregunta["id"], pregunta["id"].capitalize())
 
+# =====================================================================
+# FASE 2 — MOTOR DE SCORING (determinista, calibrado con leads semilla)
+# =====================================================================
+# Palabras clave CONFIGURABLES (ampliables sin tocar la lógica).
+INTERESES_FORMALES = [
+    "ahorro", "inversión", "inversion", "fondo", "emergencia",
+    "renta fija", "renta variable", "crédito", "credito", "línea de crédito",
+    "linea de credito", "jubilación", "jubilacion", "retiro", "pensión", "pension",
+    "capital de trabajo", "excedente", "excedentes", "plan", "diversificación",
+    "diversificacion", "indexado", "corporativa", "liquidez",
+]
+INTERESES_NO_OFRECIDOS = [
+    "cripto", "criptomoneda", "criptomonedas", "bitcoin", "forex", "no regulado",
+]
 
-# =====================================================================
-# FASE 2 — SCORING (stub, se implementa en la siguiente fase)
-# =====================================================================
+PUNTOS_TAMANO = {
+    "Más de 200": 2, "51-200": 2, "11-50": 1, "1-10": 0,
+}
+
+
+def _puntos_presupuesto(p: float) -> int:
+    if p >= 50000: return 4
+    if p >= 10000: return 3
+    if p >= 5000:  return 2
+    if p >= 1000:  return 1
+    return 0
+
+
+def _puntos_urgencia(u: str) -> int:
+    return {"Alta": 2, "Media": 1, "Baja": 0}.get(u, 0)
+
+
+def _puntos_interes(interes: str) -> int:
+    t = (interes or "").lower()
+    if any(k in t for k in INTERESES_NO_OFRECIDOS):
+        return 0          # no ofrecido / no regulado: sin bono
+    if any(k in t for k in INTERESES_FORMALES):
+        return 1          # producto formal que la institución ofrece
+    return 0              # desconocido / neutral
+
+
+def _puntos_tamano(empresa_tamano) -> int:
+    return PUNTOS_TAMANO.get(empresa_tamano, 0)
+
+
 def calcular_prioridad(tipo_cliente: str, presupuesto: float, urgencia: str,
-                       interes: str = "", empresa_tamano: Optional[str] = None) -> str:
+                       interes: str = "", empresa_tamano=None) -> str:
     """
-    [Fase 2] Devuelve 'Alta' | 'Media' | 'Baja' con una fórmula determinista
-    calibrada contra los leads semilla. tolerancia_riesgo NO entra aquí (es fit).
+    Prioridad determinista 'Alta' | 'Media' | 'Baja'. Máx. 10 puntos.
+    tolerancia_riesgo NO entra: es señal de 'fit'/compliance, no de valor del lead.
     """
-    raise NotImplementedError("Se implementa en Fase 2")
+    puntos = (
+        _puntos_presupuesto(presupuesto or 0)
+        + _puntos_urgencia(urgencia)
+        + (1 if tipo_cliente == "B2B" else 0)
+        + _puntos_tamano(empresa_tamano)
+        + _puntos_interes(interes)
+    )
+    if puntos >= 6:
+        return "Alta"
+    if puntos >= 2:
+        return "Media"
+    return "Baja"
 
 
 # =====================================================================
-# FASE 3 — RESUMEN CON GEMINI + FALLBACK (stub)
+# FASE 3 — RESUMEN CONVERSACIONAL (Gemini + fallback determinista)
 # =====================================================================
+# Gemini REDACTA datos ya recopilados; tiene PROHIBIDO inventar o inferir.
+# Si no hay API key o la llamada falla, se usa una plantilla determinista
+# para que la demo nunca se quede sin resumen (patrón anti-caída, como HU2).
+
+import os
+
+# Modelo económico y rápido, suficiente para redactar un párrafo corto.
+_GEMINI_MODEL = "gemini-1.5-flash"
+
+
+def _construir_plantilla_resumen(datos: dict) -> str:
+    """
+    Fallback 100% determinista. Arma un resumen legible SOLO con lo que hay
+    en 'datos'. No requiere red ni API key. Se usa también como insumo/base
+    del prompt de Gemini (así el LLM parte de hechos ya redactados).
+    """
+    tipo = datos.get("tipo_cliente", "")
+    nombre = datos.get("nombre", "El prospecto")
+    interes = datos.get("interes", "")
+    presupuesto = datos.get("presupuesto", None)
+    urgencia = datos.get("urgencia", "")
+    perfil = datos.get("perfil", "")
+    contexto = datos.get("_contexto_resumen", [])  # ej. ["País: Ecuador"]
+
+    partes = []
+
+    # Frase de apertura según segmento
+    if tipo == "B2B":
+        partes.append(f"{nombre} es un lead corporativo (B2B)")
+    elif tipo == "B2C":
+        partes.append(f"{nombre} es un lead individual (B2C)")
+    else:
+        partes.append(f"{nombre}")
+
+    if interes:
+        partes[-1] += f" interesado en: {interes}"
+
+    frase1 = partes[0] + "."
+
+    # Frase de detalle: presupuesto + urgencia
+    detalles = []
+    if presupuesto is not None:
+        try:
+            detalles.append(f"presupuesto aproximado de USD {float(presupuesto):,.0f}")
+        except (TypeError, ValueError):
+            pass
+    if urgencia:
+        detalles.append(f"urgencia {urgencia.lower()}")
+    frase2 = ("Cuenta con " + " y ".join(detalles) + ".") if detalles else ""
+
+    # Frase de perfil
+    frase3 = f"Perfil: {perfil}" if perfil else ""
+    if frase3 and not frase3.endswith("."):
+        frase3 += "."
+
+    # Contexto extra (país u otros datos sin columna propia)
+    frase4 = (" ".join(contexto) + ".") if contexto else ""
+
+    return " ".join(f for f in [frase1, frase2, frase3, frase4] if f).strip()
+
+
+def _redactar_con_gemini(datos: dict, base: str) -> str:
+    """
+    Intenta redactar el resumen con Gemini partiendo de 'base' (la plantilla
+    determinista). Devuelve el texto de Gemini, o LEVANTA excepción si algo
+    falla (la maneja generar_resumen para caer al fallback).
+    """
+    from google import genai  # import local: si no está instalado, cae al fallback
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY no configurada")
+
+    client = genai.Client(api_key=api_key)
+
+    prompt = (
+        "Eres un asistente comercial. Reescribe el siguiente resumen de un lead "
+        "financiero en UN párrafo breve (2-3 frases), en español, tono profesional "
+        "y neutro para un ejecutivo de ventas.\n"
+        "REGLAS ESTRICTAS:\n"
+        "- Usa ÚNICAMENTE los datos provistos. NO inventes cifras, nombres, "
+        "productos ni detalles.\n"
+        "- No agregues recomendaciones ni opiniones de inversión.\n"
+        "- Si un dato no está, simplemente no lo menciones.\n\n"
+        f"Datos del lead (fuente de verdad):\n{base}\n\n"
+        "Resumen redactado:"
+    )
+
+    respuesta = client.models.generate_content(
+        model=_GEMINI_MODEL,
+        contents=prompt,
+    )
+    texto = (respuesta.text or "").strip()
+    if not texto:
+        raise RuntimeError("Gemini devolvió respuesta vacía")
+    return texto
+
+
 def generar_resumen(datos: dict) -> str:
     """
-    [Fase 3] Redacta 'resumen_conversacion_comercial' a partir de datos ya
-    recopilados (Gemini narra; nunca inventa cifras). Si no hay API key o falla,
-    arma el resumen con una plantilla determinista usando datos['_contexto_resumen'].
+    Devuelve 'resumen_conversacion_comercial'.
+    Estrategia: arma plantilla determinista -> intenta mejorarla con Gemini ->
+    si Gemini falla por CUALQUIER motivo, devuelve la plantilla. Nunca vacío.
     """
-    raise NotImplementedError("Se implementa en Fase 3")
+    base = _construir_plantilla_resumen(datos)
+    try:
+        return _redactar_con_gemini(datos, base)
+    except Exception:
+        # Sin red, sin api key, sin librería, o error del modelo: usamos la base.
+        return base
 
 
 # =====================================================================
-# FASE 4 — PERSISTENCIA EN CRM (stub)
+# FASE 4 — PERSISTENCIA EN EL CRM
 # =====================================================================
-def guardar_lead(datos: dict):
+# Toma los datos ensamblados (Fase 1), calcula prioridad (Fase 2),
+# genera el resumen (Fase 3), arma el id correlativo y persiste el
+# LeadCRM en el CRM compartido (shared.database -> crm_database.json).
+#
+# IMPORTS: van al INICIO del archivo agent_commercial.py, junto a los
+# otros imports. Se muestran aquí para referencia:
+#
+#     from shared.schemas import LeadCRM
+#     from shared.database import crear_lead, obtener_todos_los_leads
+#
+# Nota: requieren ejecutar desde la raíz del proyecto (donde vive main.py),
+# para que el paquete 'shared' resuelva. uvicorn ya se corre así.
+
+from shared.schemas import LeadCRM
+from shared.database import crear_lead, obtener_todos_los_leads
+
+
+def _generar_id_correlativo() -> str:
     """
-    [Fase 4] Construye un LeadCRM con los datos ensamblados + prioridad + resumen,
-    genera el id correlativo (lead_00N) y lo persiste con shared.database.crear_lead.
+    Genera el siguiente id con formato 'lead_00N', continuando la numeración
+    existente en el CRM. Si ya existe lead_006, devuelve 'lead_007'.
+    Robusto ante ids con formato inesperado (los ignora para el máximo).
     """
-    raise NotImplementedError("Se implementa en Fase 4")
+    leads = obtener_todos_los_leads()
+    max_n = 0
+    for lead in leads:
+        lead_id = getattr(lead, "id", "") or ""
+        if lead_id.startswith("lead_"):
+            sufijo = lead_id.replace("lead_", "", 1)
+            if sufijo.isdigit():
+                max_n = max(max_n, int(sufijo))
+    return f"lead_{max_n + 1:03d}"
+
+
+def guardar_lead(datos: dict) -> LeadCRM:
+    """
+    Construye y persiste un LeadCRM a partir de los datos ensamblados.
+
+    Pasos:
+      1. Calcula la prioridad (Fase 2) usando interes + empresa_tamano.
+      2. Genera el resumen (Fase 3), que consume '_contexto_resumen' si existe.
+      3. Limpia claves internas (las que empiezan con '_') que NO son del schema.
+      4. Genera el id correlativo.
+      5. Arma el LeadCRM y lo persiste con crear_lead().
+
+    Devuelve el LeadCRM creado (ya guardado en el CRM).
+    """
+    # --- 1. Prioridad (Fase 2) ---
+    prioridad = calcular_prioridad(
+        tipo_cliente=datos.get("tipo_cliente", ""),
+        presupuesto=datos.get("presupuesto", 0) or 0,
+        urgencia=datos.get("urgencia", ""),
+        interes=datos.get("interes", ""),
+        empresa_tamano=datos.get("empresa_tamano"),
+    )
+
+    # --- 2. Resumen (Fase 3): se genera ANTES de limpiar _contexto_resumen ---
+    resumen = generar_resumen(datos)
+
+    # --- 3. Limpieza: quitar claves internas que no son campos del schema ---
+    datos_limpios = {k: v for k, v in datos.items() if not k.startswith("_")}
+
+    # --- 4. Id correlativo ---
+    nuevo_id = _generar_id_correlativo()
+
+    # --- 5. Construcción del LeadCRM ---
+    # Campos obligatorios del schema con defaults seguros por si faltara alguno.
+    lead = LeadCRM(
+        id=nuevo_id,
+        nombre=datos_limpios.get("nombre", "Sin nombre"),
+        email=datos_limpios.get("email", ""),
+        tipo_cliente=datos_limpios.get("tipo_cliente", ""),
+        interes=datos_limpios.get("interes", ""),
+        presupuesto=float(datos_limpios.get("presupuesto", 0) or 0),
+        perfil=datos_limpios.get("perfil", ""),
+        urgencia=datos_limpios.get("urgencia", ""),
+        prioridad=prioridad,
+        resumen_conversacion_comercial=resumen,
+        # Campos nuevos de enriquecimiento (opcionales en el schema)
+        empresa_tamano=datos_limpios.get("empresa_tamano"),
+        tolerancia_riesgo=datos_limpios.get("tolerancia_riesgo"),
+        # HU2/HU3 completan el resto; se dejan en sus defaults del schema.
+    )
+
+    crear_lead(lead)
+    return lead
