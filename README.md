@@ -1,4 +1,4 @@
-﻿# AgenticScale - CRM Financiero Inteligente (Track 1)
+# AgenticScale - CRM Financiero Inteligente (Track 1)
 Evento: Agentic Scale Ecuador Tech Week 2026 | Periodo: 2026-1 | Estado: Completado
 
 ## Equipo de trabajo
@@ -55,6 +55,26 @@ GEMINI_API_KEY = "Tu_Clave_Privada_De_Google"
 python -m streamlit run hu3_seguimiento_comercial/app.py
 ```
 
+#### Opción 3: Ejecución del Agente Comercial de Captación (HU1)
+El módulo HU1 se expone tanto como interfaz conversacional (Streamlit) como router de API (FastAPI), y ambos consumen la misma lógica de negocio.
+
+1. Instale las dependencias propias del módulo (si no se instalaron ya en el paso anterior):
+```bash
+pip install -r hu1_calificacion_leads/requirements_hu1.txt
+```
+2. Levante el servidor FastAPI (expone el router de captación de leads sobre `main.py`):
+```bash
+python -m uvicorn main:app --reload
+```
+3. En una terminal separada, levante la interfaz conversacional del Agente Comercial:
+```bash
+python -m streamlit run hu1_calificacion_leads/streamlit_app.py
+```
+4. (Opcional) Ejecute la suite de pruebas automatizadas del módulo:
+```bash
+python test_hu1.py
+```
+
 ## Calidad, Confiabilidad y Casos de Prueba (Nivel Mínimo Exigido)
 A continuación se detallan los casos de prueba manuales ejecutados para validar la lógica antialucinación del Agente Comercial:
 Caso de Prueba | Componente / Input | Comportamiento Esperado | Resultado Obtenido | Estado
@@ -77,6 +97,44 @@ Caso de Prueba | Componente / Input | Comportamiento Esperado | Resultado Obteni
 **F3 - Idempot.** | Streamlit Lifecycle | Recarga manual de la pestaña del navegador. | Reinicia el estado de sesión de forma limpia (Comportamiento esperado).| Pasado
 **F4 - Race Cond.**| Streamlit UI | Usuario ejecuta un doble clic rápido en un botón. | Se procesa bajo un semáforo lógico; actúa como un solo clic. | Pasado
 **G1 - Unit Tests**| Backend general | Ejecución de suite automatizada `test_hu1.py`. | 9/9 unit tests aprobados con calibración intacta. | Pasado
+
+## Detalle del Módulo HU1 — Agente Comercial IA
+
+### Estructura de archivos
+```
+hu1_calificacion_leads/
+├── __init__.py
+├── agent_commercial.py      # preguntas configurables, scoring, resumen IA, persistencia, blindaje
+├── routes_leads.py          # router FastAPI montado en main.py
+├── streamlit_app.py         # interfaz conversacional
+└── requirements_hu1.txt
+
+test_hu1.py                  # suite de pruebas (raíz del proyecto)
+```
+
+### Motor de scoring (determinista)
+La prioridad del lead se calcula con reglas explícitas, sin intervención de un modelo de lenguaje, para mantener el resultado reproducible y auditable. La fórmula fue calibrada contra los 6 leads semilla originales del CRM, a los que reproduce exactamente.
+
+| Componente | Aporte al score |
+|---|---|
+| Presupuesto | 0 a 4 puntos según rango |
+| Urgencia | 0 a 2 puntos |
+| Tipo de cliente B2B | +1 punto |
+| Tamaño de empresa (B2B) | 0 a 2 puntos |
+| Interés en producto formal/regulado | +1 punto |
+
+La tolerancia al riesgo (leads B2C) se persiste en el CRM pero no pesa en el score: es una señal de encaje de producto (*fit*) para la derivación comercial de HU3, no de valor del lead.
+
+### Enriquecimiento del schema compartido
+Se agregaron dos campos opcionales a `LeadCRM`, sin romper compatibilidad con los datos existentes ni con los demás módulos:
+- `empresa_tamano` — rango de colaboradores para leads B2B (pesa en el score).
+- `tolerancia_riesgo` — perfil de riesgo para leads B2C (informa la derivación de HU3).
+
+### Resumen conversacional con recuperación ante fallos
+El resumen de cada lead se arma primero con una plantilla determinista y luego se intenta enriquecer con Gemini. Si la API no está disponible por cualquier motivo, el sistema utiliza la plantilla sin interrumpir el flujo, garantizando que la demostración nunca se detenga por una dependencia externa.
+
+### Separación de audiencias en la interfaz
+La interfaz conversacional de HU1 no expone al prospecto su propio score ni los datos internos de calificación: esa información es consumo exclusivo del panel del ejecutivo comercial (HU3), en línea con cómo la guía del hackathon redacta cada historia de usuario desde un rol distinto.
 
 ## Métricas de Progreso
 | Indicador | Valor |
