@@ -40,13 +40,13 @@ if get_script_run_ctx() is None:
     raise SystemExit(subprocess.call(comando))
 
 try:
-    from agente_ia_hu2.agent_tutor import (
+    from hu2_tutor_financiero.agent_tutor import (
         evaluar_quiz,
         iniciar_quiz,
         obtener_o_crear_sesion,
         procesar_mensaje,
     )
-    from agente_ia_hu2.base_conocimiento import BASE_CONOCIMIENTO, obtener_tema
+    from hu2_tutor_financiero.base_conocimiento import BASE_CONOCIMIENTO, obtener_tema
 except ModuleNotFoundError:  # Compatibilidad con ejecuciones directas desde la carpeta del módulo
     from agent_tutor import (
         evaluar_quiz,
@@ -56,59 +56,14 @@ except ModuleNotFoundError:  # Compatibilidad con ejecuciones directas desde la 
     )
     from base_conocimiento import BASE_CONOCIMIENTO, obtener_tema
 
+from shared.ui_styles import aplicar_estilos_globales
+
 st.set_page_config(page_title="Tutor IA · Futuro Academy", page_icon="🎓", layout="centered")
 
-st.markdown(
-    """
-    <style>
-    :root {
-        --background-color: #f7f9fc;
-        --card-color: #ffffff;
-        --primary-color: #2563eb;
-        --primary-color-dark: #1d4ed8;
-        --text-color: #0f172a;
-        --muted-color: #475569;
-        --border-color: #dbe4f0;
-    }
-    .stApp {
-        background-color: var(--background-color);
-        color: var(--text-color);
-    }
-    .stSidebar {
-        background-color: #f1f5f9;
-        border-right: 1px solid var(--border-color);
-    }
-    .stButton > button {
-        background-color: var(--primary-color);
-        color: white;
-        border-radius: 8px;
-        border: 1px solid var(--primary-color-dark);
-    }
-    .stButton > button:hover {
-        background-color: var(--primary-color-dark);
-        color: white;
-    }
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px;
-    }
-    .stTextInput > div > div > input::placeholder,
-    .stTextArea > div > div > textarea::placeholder {
-        color: #64748b !important;
-    }
-    .stAlert, .stInfo, .stSuccess, .stWarning, .stError {
-        border-radius: 10px;
-    }
-    .stApp, .stApp p, .stApp div, .stApp span, .stApp label {
-        color: #000000 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Inyectar el diseño unificado
+aplicar_estilos_globales()
+
+st.markdown('<div class="topbar-marca">Atlas Financial AI</div>', unsafe_allow_html=True)
 
 
 # --------------------------------------------------------------------------
@@ -123,8 +78,8 @@ def _inicializar_estado():
         st.session_state.email = ""
     if "sesion_id" not in st.session_state:
         st.session_state.sesion_id = None
-    if "historial" not in st.session_state:
-        st.session_state.historial = []  # lista de {"role": "user"/"assistant", "content": str}
+    if "historial_tutor" not in st.session_state:
+        st.session_state.historial_tutor = []  # lista de {"role": "user"/"assistant", "content": str}
     if "quiz_preguntas" not in st.session_state:
         st.session_state.quiz_preguntas = None  # lista de preguntas activas, o None
     if "quiz_meta" not in st.session_state:
@@ -142,12 +97,12 @@ def _obtener_sesion():
 
 
 def _agregar_al_historial(role: str, content: str):
-    st.session_state.historial.append({"role": role, "content": content})
+    st.session_state.historial_tutor.append({"role": role, "content": content})
 
 
 def _reiniciar_conversacion():
     st.session_state.sesion_id = None
-    st.session_state.historial = []
+    st.session_state.historial_tutor = []
     st.session_state.quiz_preguntas = None
     st.session_state.quiz_meta = None
 
@@ -160,32 +115,15 @@ sesion = _obtener_sesion()
 # Barra lateral: identidad, estado de Gemini y acceso directo a temas
 # --------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------
+# Barra lateral: identidad y acceso directo a temas
+# --------------------------------------------------------------------------
 with st.sidebar:
-    st.header("🎓 Tutor IA")
-    st.caption("Futuro Academy — HU2")
+    # --- 2. Menú de Temas Disponibles ---
+    st.markdown('<div class="sb-progress-label">Temas disponibles</div>', unsafe_allow_html=True)
+    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True) # Espaciador ligero
 
-    nuevo_email = st.text_input(
-        "Tu correo (opcional)",
-        value=st.session_state.email,
-        placeholder="juan@correo.com",
-        help="Si lo ingresas, tu interés puede registrarse en el CRM con tu consentimiento.",
-    )
-    if nuevo_email != st.session_state.email:
-        st.session_state.email = nuevo_email
-        st.rerun()
-
-    st.divider()
-
-    if os.getenv("GEMINI_API_KEY"):
-        st.success("GEMINI_API_KEY configurada ✅")
-    else:
-        st.warning(
-            "GEMINI_API_KEY no configurada. El Tutor seguirá funcionando "
-            "usando el contenido aprobado directamente, sin redacción de Gemini."
-        )
-
-    st.divider()
-    st.subheader("Temas disponibles")
+    # Generamos los botones dinámicamente desde la base de conocimiento
     for tema_id, tema in BASE_CONOCIMIENTO.items():
         if st.button(tema["nombre_visible"], use_container_width=True, key=f"btn_tema_{tema_id}"):
             _agregar_al_historial("user", tema["nombre_visible"])
@@ -193,10 +131,18 @@ with st.sidebar:
             _agregar_al_historial("assistant", resultado["respuesta"])
             st.rerun()
 
-    st.divider()
-    if st.button("🔄 Reiniciar conversación", use_container_width=True):
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- Botón de reinicio ---
+    if st.button("🔄 Nueva conversación", use_container_width=True):
         _reiniciar_conversacion()
         st.rerun()
+
+    # --- 3. Footer ---
+    st.markdown(
+        '<div class="sb-footer">Powered by <b>ATLAS Financial AI</b> · v1.0</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # --------------------------------------------------------------------------
@@ -218,14 +164,14 @@ if sesion.tema_actual:
 # Historial de chat
 # --------------------------------------------------------------------------
 
-if not st.session_state.historial:
+if not st.session_state.historial_tutor:
     st.chat_message("assistant").write(
         "¡Hola! Soy el Tutor IA de Futuro Academy 👋 Puedes preguntarme por un "
         "tema (ej. *\"quiero aprender sobre interés compuesto\"*) o elegir uno "
         "en el menú lateral."
     )
 
-for turno in st.session_state.historial:
+for turno in st.session_state.historial_tutor:
     st.chat_message(turno["role"]).write(turno["content"])
 
 

@@ -18,7 +18,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 try:
-    from agente_ia_hu2.agent_tutor import (
+    from hu2_tutor_financiero.agent_tutor import (
         evaluar_quiz,
         iniciar_quiz,
         obtener_o_crear_sesion,

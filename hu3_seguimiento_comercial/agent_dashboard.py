@@ -2,9 +2,14 @@ import streamlit as st
 from google import genai
 
 # Inicialización segura
-try:
-    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-except Exception:
+# Obtener la clave de forma segura sin lanzar KeyError en tiempo de análisis
+api_key = st.secrets.get("GEMINI_API_KEY") if hasattr(st, "secrets") else None
+if api_key:
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception:
+        client = None
+else:
     client = None
 
 def generar_sugerencia_comercial(resumen_ia: str, tipo_cliente: str, presupuesto: float) -> str:
