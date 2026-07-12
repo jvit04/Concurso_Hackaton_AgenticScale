@@ -357,7 +357,21 @@ st.markdown(
     }
     .sb-footer b { color: #9d99c9 !important; }
 
-
+    /* Eliminar DEFINITIVAMENTE el botón de colapsar sidebar (ícono roto).
+       Cubre todas las variantes de nombre entre versiones de Streamlit. */
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="baseButton-headerNoPadding"],
+    button[kind="headerNoPadding"],
+    .stSidebar button[kind="header"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
 
     </style>
     """,
