@@ -21,9 +21,15 @@ st.set_page_config(page_title="CRM Ejecutivo", layout="centered")
 # Inyectar el diseño unificado
 aplicar_estilos_globales()
 
-st.markdown('<div class="topbar-marca">Atlas Financial AI</div>', unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown("### 📌 Accesos Rápidos")
+    st.markdown("- [📊 Resumen Operativo](#resumen-operativo)")
+    st.markdown("- [📋 Área de Gestión](#area-de-gestion)")
+    st.markdown("---")
 
+st.markdown('<div class="topbar-marca">Atlas Financial AI</div>', unsafe_allow_html=True)
 st.title("💼 Panel de Control Comercial")
+
 st.markdown("Gestión de Leads y Acciones Sugeridas por IA")
 st.markdown("---")
 
@@ -35,7 +41,7 @@ else:
     # ==========================================
     # 1. PUERTA DE ENTRADA: RESUMEN OPERATIVO
     # ==========================================
-    st.subheader("📊 Resumen Operativo")
+    st.subheader("📊 Resumen Operativo", anchor="resumen-operativo")
     
     total_leads = len(leads)
     total_pendientes = len([l for l in leads if l.estado_accion == "Pendiente"])
@@ -66,17 +72,50 @@ else:
         st.bar_chart(df_conversion, color="#2ecc71") # Verde plano
 
     st.markdown("---")
-
-    # ==========================================
+# ==========================================
     # 2. ÁREA DE TRABAJO: GESTIÓN DE LEADS
     # ==========================================
-    st.subheader("📋 Área de Gestión")
+    st.subheader("📋 Área de Gestión", anchor="area-de-gestion")
+    
+    # --- NUEVOS FILTROS COMERCIALES GLOBALES ---
+    st.markdown("Filtros de visualización:")
+    col_busqueda, col_filtro, col_orden = st.columns([2, 1, 1])
+    
+    with col_busqueda:
+        busqueda_nombre = st.text_input(
+            "🔍 Buscar por nombre o empresa:", 
+            placeholder="Ej. Constructora Andina..."
+        )
+    with col_filtro:
+        filtro_prioridad = st.selectbox(
+            "Prioridad del Lead:",
+            options=["Todas", "Alta", "Media", "Baja"],
+            index=0
+        )
+    with col_orden:
+        orden_mostrar = st.selectbox(
+            "Orden de llegada:",
+            options=["Más recientes primero", "Más antiguos primero"],
+            index=0
+        )
+        
+    # 1. Aplicar ordenamiento a la lista global
+    leads_ordenados = list(reversed(leads)) if orden_mostrar == "Más recientes primero" else leads
+    
+    # 2. Aplicar búsqueda por nombre (Case-insensitive)
+    if busqueda_nombre:
+        leads_ordenados = [l for l in leads_ordenados if busqueda_nombre.lower() in l.nombre.lower()]
+
     tab_pendientes, tab_gestionados = st.tabs(["⏳ Pendientes", "🗃️ Historial"])
     
     with tab_pendientes:
-        pendientes = [l for l in leads if l.estado_accion == "Pendiente"]
+        # Filtrar por estado Pendiente y prioridad
+        pendientes = [l for l in leads_ordenados if l.estado_accion == "Pendiente"]
+        if filtro_prioridad != "Todas":
+            pendientes = [l for l in pendientes if l.prioridad == filtro_prioridad]
+            
         if not pendientes:
-            st.success("¡Todo al día! No hay acciones pendientes de revisión.")
+            st.success("✅ ¡Todo al día! No hay acciones pendientes con estos filtros.")
             
         for lead in pendientes:
             with st.expander(f"👤 {lead.nombre} (Prioridad: {lead.prioridad})", expanded=True):
@@ -86,7 +125,7 @@ else:
                 st.markdown("---")
                 
                 # Integración con Gemini y protección anti-errores
-                if not lead.accion_propuesta or lead.accion_propuesta == "Requiere revisión manual" or "🚨" in lead.accion_propuesta:
+                if not lead.accion_propuesta or lead.accion_propuesta == "Requiere revisión manual" or "✨" in lead.accion_propuesta:
                     with st.spinner("🤖 Gemini está analizando este lead..."):
                         sugerencia_ia = generar_sugerencia_comercial(
                             lead.resumen_conversacion_comercial, 
@@ -101,21 +140,35 @@ else:
                 
                 col_btn_1, col_btn_2 = st.columns(2)
                 with col_btn_1:
-                    if st.button("Aprobar", key=f"app_{lead.id}", use_container_width=True):
+                    if st.button("👍 Aprobar / Guardar", key=f"app_{lead.id}", use_container_width=True):
                         lead.accion_propuesta = accion_editable
                         lead.estado_accion = "Aprobado"
                         actualizar_lead(lead)
                         st.rerun()
                 with col_btn_2:
-                    if st.button("Rechazar", key=f"rej_{lead.id}", use_container_width=True):
+                    if st.button("❌ Rechazar", key=f"rej_{lead.id}", use_container_width=True):
                         lead.estado_accion = "Rechazado"
                         actualizar_lead(lead)
                         st.rerun()
 
     with tab_gestionados:
-        gestionados = [l for l in leads if l.estado_accion != "Pendiente"]
+        # --- Filtro exclusivo para Historial ---
+        filtro_estado = st.radio(
+            "Filtrar por estado de resolución:",
+            options=["Todos", "Aprobado", "Rechazado"],
+            horizontal=True
+        )
+        st.markdown("---")
+        
+        # Filtrar por estado gestionado, prioridad y el nuevo radio button
+        gestionados = [l for l in leads_ordenados if l.estado_accion != "Pendiente"]
+        if filtro_prioridad != "Todas":
+            gestionados = [l for l in gestionados if l.prioridad == filtro_prioridad]
+        if filtro_estado != "Todos":
+            gestionados = [l for l in gestionados if l.estado_accion == filtro_estado]
+            
         if not gestionados:
-            st.write("Aún no has gestionado ningún lead.")
+            st.write("Aún no has gestionado ningún lead que coincida con estos filtros.")
             
         for lead in gestionados:
             icono = "✅" if lead.estado_accion == "Aprobado" else "⛔"

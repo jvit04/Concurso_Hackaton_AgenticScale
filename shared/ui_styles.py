@@ -229,15 +229,52 @@ def aplicar_estilos_globales():
             min-width: 300px !important;
             width: 300px !important;
             height: 100vh !important;
-            overflow: hidden !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }
         [data-testid="stSidebarContent"],
         [data-testid="stSidebarUserContent"] {
             display: flex !important;
             flex-direction: column !important;
             height: 100% !important;
-            overflow: hidden !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }
+
+        /* Scrollbar personalizado para el sidebar */
+        [data-testid="stSidebar"]::-webkit-scrollbar,
+        [data-testid="stSidebarContent"]::-webkit-scrollbar,
+        [data-testid="stSidebarUserContent"]::-webkit-scrollbar {
+            width: 5px;
+            background: transparent;
+        }
+        [data-testid="stSidebar"]::-webkit-scrollbar-track,
+        [data-testid="stSidebarContent"]::-webkit-scrollbar-track,
+        [data-testid="stSidebarUserContent"]::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        [data-testid="stSidebar"]::-webkit-scrollbar-thumb,
+        [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb,
+        [data-testid="stSidebarUserContent"]::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 999px;
+        }
+        [data-testid="stSidebar"]::-webkit-scrollbar-thumb:hover,
+        [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb:hover,
+        [data-testid="stSidebarUserContent"]::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.7);
+        }
+
+        .stSidebar a {
+            text-decoration: none !important;
+            color: #e5e7ff !important;
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
+        .stSidebar a:hover {
+            transform: translateX(4px);
+            color: #e5e7ff !important;
+        }
+
         .sb-footer {
             margin-top: auto !important;
             padding-top: 16px;
@@ -317,6 +354,18 @@ def aplicar_estilos_globales():
             height: 0 !important;
             opacity: 0 !important;
             pointer-events: none !important;
+        }
+                /* ===================== SIDEBAR: Enlaces (Accesos Rápidos) ===================== */
+        .stSidebar a {
+            text-decoration: none !important;
+            color: #e5e7ff !important;
+            transition: color 0.2s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+        .stSidebar a:hover {
+            text-decoration: none !important;
+            color: #a855f7 !important; /* Le da un toque de brillo sutil al pasar el mouse */
+            transform: translateX(4px); /* Pequeña animación hacia la derecha */
         }
 
         </style>

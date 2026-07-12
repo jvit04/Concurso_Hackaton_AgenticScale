@@ -8,7 +8,7 @@ pg = st.navigation([
     st.Page(
         "hu1_calificacion_leads/streamlit_app.py", 
         title="ATLAS: Captación y Calificación", 
-        icon="🤖", 
+        icon="💼", 
         url_path="captacion"
     ),
     st.Page(
