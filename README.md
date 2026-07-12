@@ -56,6 +56,9 @@ python -m streamlit run hu3_seguimiento_comercial/app.py
 ```
 
 ## Calidad, Confiabilidad y Casos de Prueba (Nivel Mínimo Exigido)
+A continuación se detallan los casos de prueba manuales ejecutados para validar la lógica antialucinación del Agente Comercial:
+Caso de Prueba | Componente / Input | Comportamiento Esperado | Resultado Obtenido | Estado
+---|---|---|---|---
 **01 - Corp.** | HU1 - Segmento B2B | Presupuesto $120k con urgencia media. | Derivar a especialista B2B. | Pasado
 **02 - Retail Min.**| HU1 - Segmento B2C | Presupuesto $50 con interés informal. | Enviar material educativo introductorio. | Pasado
 **03 - Retail Alto**| HU1 - Segmento B2C | Presupuesto $8k con perfil conservador. | Agendar reunión de alto valor. | Pasado
