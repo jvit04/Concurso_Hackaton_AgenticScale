@@ -58,7 +58,7 @@ except ModuleNotFoundError:  # Compatibilidad con ejecuciones directas desde la 
 
 from shared.ui_styles import aplicar_estilos_globales
 
-st.set_page_config(page_title="Tutor IA · Futuro Academy", page_icon="🎓", layout="centered")
+#st.set_page_config(page_title="Tutor IA · Futuro Academy", page_icon="🎓", layout="centered")
 
 # Inyectar el diseño unificado
 aplicar_estilos_globales()

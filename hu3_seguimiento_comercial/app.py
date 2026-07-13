@@ -16,7 +16,7 @@ from shared.database import obtener_todos_los_leads, actualizar_lead
 from hu3_seguimiento_comercial.agent_dashboard import generar_sugerencia_comercial
 from shared.ui_styles import aplicar_estilos_globales
 
-st.set_page_config(page_title="CRM Ejecutivo", layout="centered")
+#st.set_page_config(page_title="CRM Ejecutivo", layout="centered")
 
 # Inyectar el diseño unificado
 aplicar_estilos_globales()

@@ -47,12 +47,12 @@ except ModuleNotFoundError:  # ejecución directa desde la carpeta del módulo
 
 from shared.ui_styles import aplicar_estilos_globales
 
-st.set_page_config(
-    page_title="Agente Comercial IA · HU1",
-    page_icon="💼",
-    layout="centered",
-    initial_sidebar_state="expanded",
-)
+#st.set_page_config(
+#    page_title="Agente Comercial IA · HU1",
+#    page_icon="💼",
+#    layout="centered",
+#    initial_sidebar_state="expanded",
+#)
 
 # Inyectar el diseño unificado
 aplicar_estilos_globales()
