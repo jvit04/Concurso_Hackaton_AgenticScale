@@ -1,7 +1,11 @@
 import streamlit as st
 
 # Configuración global de la ventana
-st.set_page_config(page_title="ATLAS Financial AI", page_icon="🏛️", layout="centered")
+st.set_page_config(
+    page_title="ATLAS Financial AI",
+    page_icon="🏛️",
+    layout="centered"
+)
 
 # Configuración de navegación del ecosistema completo Track 1
 pg = st.navigation([
